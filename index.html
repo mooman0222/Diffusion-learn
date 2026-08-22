@@ -5,263 +5,421 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>拡散モデルを学ぼう</title>
 <style>
-  :root{
-    --bg:#0b0e14; --card:#131823; --line:#232b3b;
-    --text:#e6edf3; --sub:#8b98a9;
-    --blue:#58a6ff; --green:#3fb950; --purple:#7c6cff; --orange:#ff8c5a;
-  }
-  *{ box-sizing:border-box; margin:0; padding:0; }
-  body{
-    background:var(--bg); color:var(--text);
-    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI",Meiryo,system-ui,sans-serif;
-    line-height:1.8; padding:0 16px 60px;
-  }
-  .wrap{ max-width:900px; margin:0 auto; }
-  .hero{ text-align:center; padding:56px 0 28px; }
-  .hero h1{
-    font-size:clamp(28px,5vw,44px); letter-spacing:.04em;
-    background:linear-gradient(120deg,#7c6cff,#22d3ee);
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-  }
-  .hero p{ color:var(--sub); margin-top:10px; font-size:clamp(14px,2vw,17px); }
-  .flow{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin:26px 0 8px; }
-  .flow .step{
-    background:var(--card); border:1px solid var(--line); border-radius:12px;
-    padding:10px 16px; font-size:14px; color:var(--sub);
-  }
-  .flow .step b{ color:var(--text); display:block; font-size:15px; }
-  .flow .arr{ align-self:center; color:#3d4a5f; font-weight:bold; }
-  .card{
-    background:var(--card); border:1px solid var(--line); border-radius:16px;
-    padding:26px 28px; margin-top:28px;
-  }
-  .card h2{ font-size:20px; margin-bottom:12px; display:flex; align-items:center; gap:12px; }
-  .badge{
-    background:linear-gradient(135deg,#6d5dfc,#3aa0ff); color:#fff;
-    font-size:12px; font-weight:700; padding:4px 12px; border-radius:999px; white-space:nowrap;
-  }
-  .card p{ color:var(--sub); font-size:15px; margin-bottom:10px; }
-  .card p b{ color:var(--text); }
-  canvas{
-    width:100%; height:auto; max-width:480px; display:block;
-    margin:14px auto; background:#0d1117; border:1px solid var(--line); border-radius:12px;
-  }
-  .center{ text-align:center; }
-  .btn-row{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:14px; }
-  .btn{
-    appearance:none; border:none; cursor:pointer;
-    background:linear-gradient(135deg,#6d5dfc,#3aa0ff); color:#fff;
-    font-size:15px; font-weight:700; padding:11px 26px; border-radius:10px;
-    transition:transform .08s, filter .15s; font-family:inherit;
-  }
-  .btn:hover{ filter:brightness(1.15); }
-  .btn:active{ transform:scale(.97); }
-  .btn:disabled{ opacity:.45; cursor:not-allowed; }
-  .btn.ghost{ background:#1c2332; border:1px solid var(--line); }
-  .btn.active{ outline:2px solid #22d3ee; outline-offset:2px; }
-  input[type=range]{
-    width:100%; max-width:480px; display:block; margin:6px auto 0;
-    accent-color:var(--purple); height:34px; cursor:pointer;
-  }
-  .slider-label{
-    max-width:480px; margin:0 auto; display:flex; justify-content:space-between;
-    color:var(--sub); font-size:13px;
-  }
-  .slider-label span:nth-child(2){ color:var(--text); font-weight:700; }
-  .legend{ text-align:center; font-size:13px; color:var(--sub); margin-top:8px; }
-  .legend i{ display:inline-block; width:10px; height:10px; border-radius:50%; margin:0 4px 0 14px; }
-  .net{
-    display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;
-    margin:18px 0 6px;
-  }
-  .net .node{
-    background:#0d1117; border:1px solid var(--line); border-radius:10px; padding:10px 12px; text-align:center;
-  }
-  .net .dots{ display:grid; gap:3px; margin:6px auto; }
-  .net .d{ width:7px; height:7px; border-radius:50%; }
-  .net .lbl{ font-size:12px; color:var(--sub); }
-  .net .arr{ color:#3d4a5f; font-size:20px; font-weight:bold; }
-  .train-wrap{ display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; justify-content:center; }
-  .train-wrap canvas{ margin:0; flex:1 1 300px; max-width:480px; }
-  .train-side{ flex:1 1 260px; min-width:240px; }
-  .train-side canvas{ width:100%; max-width:100%; margin:0 0 8px; }
-  .progress{
-    height:10px; background:#0d1117; border:1px solid var(--line);
-    border-radius:999px; overflow:hidden; margin:12px 0 4px;
-  }
-  .progress i{ display:block; height:100%; width:0%; background:linear-gradient(90deg,#7c6cff,#22d3ee); transition:width .1s; }
-  .loss-line{ font-size:14px; color:var(--sub); }
-  .loss-line b{ color:var(--green); font-size:16px; }
-  .status{ font-size:14px; color:var(--sub); margin-top:12px; }
-  .status b{ color:var(--text); }
-  .mini-cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; }
-  .mini{ background:#0d1117; border:1px solid var(--line); border-radius:12px; padding:16px; }
-  .mini h3{ font-size:15px; margin-bottom:6px; color:var(--text); }
-  .mini p{ font-size:14px; color:var(--sub); margin:0; }
-  details{
-    background:#0d1117; border:1px solid var(--line); border-radius:10px;
-    padding:12px 16px; margin-top:10px;
-  }
-  summary{ cursor:pointer; font-weight:700; color:var(--text); }
-  details p{ margin:8px 0 0; font-size:14px; color:var(--sub); }
-  details p b{ color:var(--green); }
-  footer{ text-align:center; color:#4b5668; font-size:13px; margin-top:40px; }
-  #errBanner{
-    display:none; background:#5c1a1a; border:1px solid #ff6b6b; color:#ffb3b3;
-    border-radius:10px; padding:12px 16px; margin-top:20px; font-size:14px;
-    white-space:pre-wrap; font-family:monospace;
-  }
+:root {
+  --bg: #0b0f17;
+  --card: #121a26;
+  --card2: #0f1620;
+  --line: #1e2a3a;
+  --text: #e8eef7;
+  --muted: #8fa3bd;
+  --accent1: #7c6cff;
+  --accent2: #22d3ee;
+  --good: #34d399;
+  --warn: #fbbf24;
+  --bad: #f87171;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: radial-gradient(1100px 500px at 85% -5%, #18233d 0%, var(--bg) 55%);
+  color: var(--text);
+  font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", "BIZ UDGothic", Meiryo, sans-serif;
+  line-height: 1.8;
+  font-size: 16px;
+}
+main { max-width: 940px; margin: 0 auto; padding: 0 20px 80px; }
+h1, h2, h3 { line-height: 1.4; }
+h2 { font-size: 26px; margin-bottom: 6px; }
+p { margin: 10px 0; color: var(--muted); }
+b, strong { color: var(--text); }
+mark { background: rgba(124, 108, 255, 0.25); color: var(--text); padding: 0 4px; border-radius: 4px; }
+
+nav {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(11, 15, 23, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+nav .inner { max-width: 940px; margin: 0 auto; padding: 0 20px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; height: 54px; }
+nav .logo { font-weight: 700; color: var(--text); text-decoration: none; font-size: 15px; }
+nav .logo span { background: linear-gradient(90deg, var(--accent1), var(--accent2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+nav a.navlink { color: var(--muted); text-decoration: none; font-size: 13.5px; }
+nav a.navlink:hover { color: var(--accent2); }
+
+.hero { padding: 64px 0 36px; text-align: center; }
+.hero h1 { font-size: 40px; font-weight: 800; background: linear-gradient(90deg, #a78bfa, #22d3ee, #a78bfa); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero .sub { font-size: 17px; color: var(--muted); max-width: 640px; margin: 14px auto 22px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px 30px;
+  margin: 26px 0;
+}
+.card .stepno {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.08em;
+  color: var(--accent2);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  border-radius: 999px; padding: 3px 14px; margin-bottom: 14px;
+  background: rgba(34, 211, 238, 0.06);
+}
+.card .stepno em { font-style: normal; color: var(--muted); font-weight: 400; }
+.lead { font-size: 17px; color: var(--text); }
+.box {
+  background: var(--card2); border: 1px solid var(--line);
+  border-radius: 12px; padding: 18px 20px; margin: 16px 0;
+}
+.box h4 { margin-bottom: 10px; font-size: 15px; color: var(--accent2); }
+.note { font-size: 13.5px; color: var(--muted); }
+
+.flow { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; justify-content: center; margin: 20px 0 6px; }
+.flow .fstep {
+  background: var(--card2); border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 16px; text-align: center; flex: 1 1 140px; margin: 4px;
+}
+.flow .fstep b { display: block; font-size: 14.5px; margin-bottom: 4px; }
+.flow .fstep small { color: var(--muted); font-size: 12.5px; }
+.flow .arrow { align-self: center; color: var(--accent1); font-size: 20px; padding: 0 6px; }
+
+button.btn {
+  cursor: pointer; border: none; border-radius: 10px;
+  padding: 9px 20px; font-size: 15px; font-weight: 700; font-family: inherit;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  color: #fff; transition: filter 0.15s, transform 0.1s;
+}
+button.btn:hover { filter: brightness(1.15); }
+button.btn:active { transform: scale(0.98); }
+button.btn.ghost {
+  background: transparent; color: var(--accent2);
+  border: 1px solid rgba(34, 211, 238, 0.45);
+}
+button.btn.ghost:hover { background: rgba(34, 211, 238, 0.08); }
+button.btn.active { outline: 2px solid var(--accent2); outline-offset: 2px; }
+button.btn:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
+.btnrow { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center; margin: 12px 0; }
+
+input[type="range"] { accent-color: var(--accent1); width: 100%; }
+.slider-label {
+  max-width: 480px; margin: 0 auto; display: flex; justify-content: space-between;
+  color: var(--muted); font-size: 13px;
+}
+.slider-label span:nth-child(2) { color: var(--text); font-weight: 700; }
+
+canvas.demo {
+  display: block; max-width: 480px; width: 100%; height: auto;
+  margin: 14px auto; background: #0c1320; border: 1px solid var(--line); border-radius: 12px;
+}
+.center { text-align: center; }
+
+.legend { text-align: center; font-size: 13px; color: var(--muted); margin-top: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 0 4px 0 14px; }
+
+.net {
+  display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap;
+  margin: 18px 0 6px;
+}
+.net .node {
+  background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; text-align: center;
+}
+.net .dots { display: grid; gap: 3px; margin: 6px auto; }
+.net .d { width: 7px; height: 7px; border-radius: 50%; }
+.net .lbl { font-size: 12px; color: var(--muted); }
+.net .arr { color: var(--muted); font-size: 20px; font-weight: bold; }
+
+.train-wrap { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; justify-content: center; }
+.train-wrap canvas.demo { margin: 0; flex: 1 1 300px; }
+.train-side { flex: 1 1 260px; min-width: 240px; }
+.train-side canvas.demo { width: 100%; max-width: 100%; margin: 0 0 8px; }
+.progress {
+  height: 10px; background: var(--card2); border: 1px solid var(--line);
+  border-radius: 999px; overflow: hidden; margin: 12px 0 4px;
+}
+.progress i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent1), var(--accent2)); transition: width 0.1s; }
+.loss-line { font-size: 14px; color: var(--muted); }
+.loss-line b { color: var(--good); font-size: 16px; }
+.status { font-size: 14px; color: var(--muted); margin-top: 12px; }
+.status b { color: var(--text); }
+
+.mini-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin: 14px 0; }
+.mini { background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.mini h3 { font-size: 15px; margin-bottom: 6px; color: var(--accent2); }
+.mini p { font-size: 14px; color: var(--muted); margin: 0; }
+
+details { background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; margin: 10px 0; }
+details summary { cursor: pointer; font-weight: 700; color: var(--text); }
+details p { margin: 8px 0 0; }
+
+footer { text-align: center; padding: 30px 20px 60px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); }
+
+#errBanner {
+  display: none; background: #5c1a1a; border: 1px solid #ff6b6b; color: #ffb3b3;
+  border-radius: 10px; padding: 12px 16px; margin-top: 20px; font-size: 14px;
+  white-space: pre-wrap; font-family: monospace;
+}
 </style>
 </head>
 <body>
-<div class="wrap">
 
-<div id="errBanner"></div>
-
-<header class="hero">
-  <h1>拡散モデルを学ぼう</h1>
-  <p>「ノイズを消して絵を描く」画像生成AIのしくみを、ブラウザの中で体験しよう。</p>
-  <div class="flow">
-    <div class="step"><b>STEP 1</b>お手本データを用意</div><div class="arr">→</div>
-    <div class="step"><b>STEP 2</b>ノイズを加える</div><div class="arr">→</div>
-    <div class="step"><b>STEP 3</b>直し方を学習</div><div class="arr">→</div>
-    <div class="step"><b>STEP 4</b>ノイズから生成</div>
+<nav>
+  <div class="inner">
+    <a class="logo" href="#top">拡散モデル<span>を学ぼう</span></a>
+    <a class="navlink" href="#intro">はじめに</a>
+    <a class="navlink" href="#step1">データ</a>
+    <a class="navlink" href="#step2">ノイズ</a>
+    <a class="navlink" href="#step3">学習</a>
+    <a class="navlink" href="#step4">生成</a>
+    <a class="navlink" href="#glossary">用語集</a>
   </div>
-</header>
+</nav>
 
-<section class="card">
-  <h2><span class="badge">STEP 1</span>お手本データを用意する</h2>
-  <p>まず、AIに覚えてもらう「お手本」の形を用意します。ここでは <b>0〜9の数字</b> を、<b>20×20のドットグリッド</b>（マス目）で表現しました。点が光っているマス＝数字の一部です。本物の画像生成AIも、手書き数字のデータセット（MNIST）で学習した歴史があります。どの数字を覚えさせるか選んでみましょう。</p>
-  <canvas id="cData" width="480" height="480"></canvas>
-  <div class="btn-row" id="digitBtns">
-    <button class="btn digit active" data-d="0">0</button>
-    <button class="btn digit" data-d="1">1</button>
-    <button class="btn digit" data-d="2">2</button>
-    <button class="btn digit" data-d="3">3</button>
-    <button class="btn digit" data-d="4">4</button>
-    <button class="btn digit" data-d="5">5</button>
-    <button class="btn digit" data-d="6">6</button>
-    <button class="btn digit" data-d="7">7</button>
-    <button class="btn digit" data-d="8">8</button>
-    <button class="btn digit" data-d="9">9</button>
-  </div>
-  <p class="legend"><i style="background:var(--blue)"></i>お手本の点（AIに覚えてもらう形）</p>
-</section>
+<main id="top">
 
-<section class="card">
-  <h2><span class="badge">STEP 2</span>ノイズを加える（拡散）</h2>
-  <p>スライダーを動かして、お手本の点に少しずつ「ノイズ」を足してみましょう。ノイズとは、でたらめな値のこと。足すほどに形がくずれて、最後は真っさらなノイズの固まりになります。コーヒーにミルクを落とすと広がって見分けがつかなくなるのと同じで、これを <b>拡散</b> と呼びます。</p>
-  <canvas id="cNoise" width="480" height="480"></canvas>
-  <input type="range" id="noiseSlider" min="0" max="120" value="0">
-  <div class="slider-label"><span>ノイズなし</span><span id="noiseVal">0%</span><span>ノイズ最大</span></div>
-  <p class="legend"><i style="background:var(--blue)"></i>元の形　<i style="background:var(--orange)"></i>ノイズが増えるほど色が変わる</p>
-</section>
+  <div id="errBanner"></div>
 
-<section class="card">
-  <h2><span class="badge">STEP 3</span>AIにノイズの直し方を学習させる</h2>
-  <p>ここが一番大事な部分です。AIは次の「練習問題」を何度も何度も解きます。</p>
-  <p><b>「ノイズのかかった点」を見せられて、「足されたノイズがどの向きにどれだけか」を当てる</b>。当てられるようになる＝ノイズを消すのが上手になる、これが学習です。</p>
-  <div class="net">
-    <div class="node">
-      <div class="lbl">入力</div>
-      <div class="dots" style="grid-template-columns:repeat(1,7px)">
-        <span class="d" style="background:var(--blue)"></span>
-        <span class="d" style="background:var(--blue)"></span>
-        <span class="d" style="background:var(--blue)"></span>
-      </div>
-      <div class="lbl">点の位置 (x, y)<br>ノイズの量</div>
+  <header class="hero">
+    <h1>拡散モデルを学ぼう</h1>
+    <p class="sub">このページの中には、<b>「ノイズを消して絵を描くAI」</b>が入っています。<br>ブラウザ上で数字を学習・生成させながら、画像生成AIのしくみを体験してみましょう。</p>
+    <div class="btnrow">
+      <button class="btn" onclick="document.getElementById('intro').scrollIntoView()">はじめてみる</button>
+      <button class="btn ghost" onclick="document.getElementById('step4').scrollIntoView()">生成ページへジャンプ</button>
     </div>
-    <div class="arr">→</div>
-    <div class="node">
-      <div class="lbl">かくれた層（2枚）</div>
-      <div class="dots" style="grid-template-columns:repeat(8,7px)">
-        <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
-        <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
-        <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
-        <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
-        <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
-        <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
-        <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
-        <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
-        <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
-        <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
-        <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
-        <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
+  </header>
+
+  <section id="intro">
+    <div class="card">
+      <h2>拡散モデルって、なに?</h2>
+      <p class="lead">「ノイズを足して壊す → ノイズの消し方を学習 → 真っさらなノイズから絵を描く」という、<mark>画像生成AIの代表的なしくみ</mark>です。</p>
+      <p>このページのAIは「0〜9の数字」を覚えます。まず数字にノイズを足してバラバラにし、その「直し方」を練習させます。すると、ノイズだけからでも数字を組み立てられるようになるのです。</p>
+      <div class="flow">
+        <div class="fstep"><b>① お手本を用意</b><small>覚えてもらう数字の形</small></div>
+        <div class="arrow">→</div>
+        <div class="fstep"><b>② ノイズを足す</b><small>形を少しずつ壊す（拡散）</small></div>
+        <div class="arrow">→</div>
+        <div class="fstep"><b>③ 直し方を学習</b><small>ノイズを当てる練習をくり返す</small></div>
+        <div class="arrow">→</div>
+        <div class="fstep"><b>④ ノイズから生成</b><small>お手本なしで数字を作る</small></div>
       </div>
-      <div class="lbl">48個の小さな計算機 × 2</div>
+      <p class="note">このページでは、この4ステップを1つずつ「触って」体験できます。数式はほとんど出てきません。処理はすべてあなたのブラウザの中で行われ、データはどこにも送信されません。</p>
     </div>
-    <div class="arr">→</div>
-    <div class="node">
-      <div class="lbl">出力</div>
-      <div class="dots" style="grid-template-columns:repeat(1,7px)">
-        <span class="d" style="background:var(--green)"></span>
-        <span class="d" style="background:var(--green)"></span>
+  </section>
+
+  <section id="step1">
+    <div class="card">
+      <div class="stepno">STEP 1 <em>／ お手本データを用意する</em></div>
+      <h2>お手本 = 「覚えてほしい形」</h2>
+      <p class="lead">まず、AIに覚えてもらう「お手本」の形を用意します。ここでは <b>0〜9の数字</b> を、<b>20×20のドットグリッド</b>（マス目）で表現しました。点が光っているマス＝数字の一部です。</p>
+      <p>本物の画像生成AIも、手書き数字のデータセット（MNIST）で学習した歴史があります。どの数字を覚えさせるか選んでみましょう。</p>
+      <div class="box">
+        <canvas id="cData" class="demo" width="480" height="480"></canvas>
+        <div class="btnrow" id="digitBtns">
+          <button class="btn digit active" data-d="0">0</button>
+          <button class="btn digit" data-d="1">1</button>
+          <button class="btn digit" data-d="2">2</button>
+          <button class="btn digit" data-d="3">3</button>
+          <button class="btn digit" data-d="4">4</button>
+          <button class="btn digit" data-d="5">5</button>
+          <button class="btn digit" data-d="6">6</button>
+          <button class="btn digit" data-d="7">7</button>
+          <button class="btn digit" data-d="8">8</button>
+          <button class="btn digit" data-d="9">9</button>
+        </div>
+        <p class="legend"><i style="background:var(--accent2)"></i>お手本の点（AIに覚えてもらう形）</p>
       </div>
-      <div class="lbl">ノイズの向きと大きさ</div>
-    </div>
-  </div>
-  <p>「学習スタート」を押すと、この計算機が練習を始めます。右の緑の点は「AIがノイズを消した結果」。学習が進むにつれて、だんだん数字の形に近づいていくのがわかります。</p>
-  <div class="train-wrap">
-    <canvas id="cTrain" width="480" height="480"></canvas>
-    <div class="train-side">
-      <canvas id="cLoss" width="300" height="110"></canvas>
-      <p class="loss-line">誤差（小さいほど得意）: <b id="lossText">--</b><br><span style="font-size:12px">誤差は0にはならないのが正常。ノイズはランダムなので、どんなに上手でも当てきれないからです。</span></p>
-      <div class="progress"><i id="pbar"></i></div>
-      <div class="btn-row">
-        <button id="btnTrain" class="btn">学習スタート</button>
-        <button id="btnReset" class="btn ghost">リセット</button>
+      <div class="box" style="border-color: rgba(251,191,36,0.3)">
+        <h4>ここがポイント</h4>
+        <p>「覚える形」は、あとでノイズを足すときの<strong>「元の答え」</strong>になります。この答えがあるから、「ノイズをどれだけ消せばいいか」をAIが練習できるのです。</p>
       </div>
-      <p class="status" id="trainStatus">まだ学習していません。「学習スタート」を押してみましょう。</p>
     </div>
-  </div>
-  <p class="legend"><i style="background:var(--blue);opacity:.5"></i>お手本の点　<i style="background:var(--green)"></i>AIがノイズを消した結果</p>
-</section>
+  </section>
 
-<section class="card">
-  <h2><span class="badge">STEP 4</span>ノイズだけから生成する</h2>
-  <p>学習が終わったら、いよいよ生成です。<b>お手本データは一切使いません</b>。真っさらなノイズの固まりから出発して、少しずつノイズを取り除いていくと、数字が浮かび上がってきます。</p>
-  <p>「生成する」を何度も押してみましょう。毎回ランダムにノイズが足されるので、<b>毎回少しずつちがう形</b>が生まれます。これが「生成AI」が毎回ちがう絵を生み出す理由です。</p>
-  <canvas id="cGen" width="480" height="480"></canvas>
-  <div class="center"><button id="btnGen" class="btn">生成する</button></div>
-  <p class="status" id="genStatus">学習すると、うまく生成できるようになります。</p>
-</section>
+  <section id="step2">
+    <div class="card">
+      <div class="stepno">STEP 2 <em>／ ノイズを加える</em></div>
+      <h2>拡散 = ノイズを足して形を壊す</h2>
+      <p class="lead">スライダーを動かして、お手本の点に少しずつ「ノイズ」を足してみましょう。ノイズとは、<mark>でたらめな値</mark>のこと。足すほどに形がくずれて、最後は真っさらなノイズの固まりになります。</p>
+      <p>コーヒーにミルクを落とすと広がって見分けがつかなくなるのと同じで、これを <b>拡散</b> と呼びます。</p>
+      <div class="box">
+        <input type="range" id="noiseSlider" min="0" max="120" value="0">
+        <div class="slider-label"><span>ノイズなし</span><span id="noiseVal">0%</span><span>ノイズ最大</span></div>
+        <canvas id="cNoise" class="demo" width="480" height="480"></canvas>
+        <p class="legend"><i style="background:var(--accent2)"></i>元の形　<i style="background:var(--bad)"></i>ノイズが増えるほど色が変わる</p>
+      </div>
+      <div class="box" style="border-color: rgba(251,191,36,0.3)">
+        <h4>ここがポイント</h4>
+        <p>ノイズの量は <strong>「0（なし）」から「120（最大）」の段階</strong>で調整できます。この「段階」が、あとの学習でとても大切になります。AIは「どれだけノイズがかかっているか」を見て、直し方を決めるからです。</p>
+      </div>
+    </div>
+  </section>
 
-<section class="card">
-  <h2>しくみのおさらい</h2>
-  <div class="mini-cards">
-    <div class="mini"><h3>1. 拡散 = ノイズを足す</h3><p>お手本データに少しずつノイズを足して、真っさらなノイズの状態まで「壊す」。</p></div>
-    <div class="mini"><h3>2. 学習 = 直し方の練習</h3><p>「ノイズのかかった点」から、足されたノイズを当てる練習をくり返す。当たるほどノイズを消すのが上手になる。</p></div>
-    <div class="mini"><h3>3. 生成 = 逆再生</h3><p>真っさらなノイズからスタートして、少しずつノイズを取り除いて形を作る。最初のノイズが毎回ちがうので、結果もちがう。</p></div>
-  </div>
-</section>
+  <section id="step3">
+    <div class="card">
+      <div class="stepno">STEP 3 <em>／ ミニAIを育てる</em></div>
+      <h2>学習 = ノイズの直し方の練習</h2>
+      <p class="lead">ここが一番大事な部分です。AIは次の「練習問題」を何度も何度も解きます。</p>
+      <p><b>「ノイズのかかった点」を見せられて、「足されたノイズがどの向きにどれだけか」を当てる</b>。当てられるようになる＝ノイズを消すのが上手になる、これが学習です。</p>
+      <div class="box">
+        <h4>AIの中身（小さな計算機）</h4>
+        <div class="net">
+          <div class="node">
+            <div class="lbl">入力</div>
+            <div class="dots" style="grid-template-columns:repeat(1,7px)">
+              <span class="d" style="background:var(--accent2)"></span>
+              <span class="d" style="background:var(--accent2)"></span>
+              <span class="d" style="background:var(--accent2)"></span>
+            </div>
+            <div class="lbl">点の位置 (x, y)<br>ノイズの量</div>
+          </div>
+          <div class="arr">→</div>
+          <div class="node">
+            <div class="lbl">かくれた層（2枚）</div>
+            <div class="dots" style="grid-template-columns:repeat(8,7px)">
+              <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
+              <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
+              <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
+              <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
+              <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
+              <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
+              <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
+              <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
+              <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
+              <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
+              <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
+              <span class="d" style="background:#64748b"></span><span class="d" style="background:#64748b"></span>
+            </div>
+            <div class="lbl">48個の小さな計算機 × 2</div>
+          </div>
+          <div class="arr">→</div>
+          <div class="node">
+            <div class="lbl">出力</div>
+            <div class="dots" style="grid-template-columns:repeat(1,7px)">
+              <span class="d" style="background:var(--good)"></span>
+              <span class="d" style="background:var(--good)"></span>
+            </div>
+            <div class="lbl">ノイズの向きと大きさ</div>
+          </div>
+        </div>
+        <p class="note">「学習スタート」を押すと、この計算機が練習を始めます。右の緑の点は「AIがノイズを消した結果」。学習が進むにつれて、だんだん数字の形に近づいていくのがわかります。</p>
+      </div>
+      <div class="box">
+        <h4>学習のようす</h4>
+        <div class="train-wrap">
+          <canvas id="cTrain" class="demo" width="480" height="480"></canvas>
+          <div class="train-side">
+            <canvas id="cLoss" class="demo" width="300" height="110"></canvas>
+            <p class="loss-line">誤差（小さいほど得意）: <b id="lossText">--</b><br><span style="font-size:12px">誤差は0にはならないのが正常。ノイズはランダムなので、どんなに上手でも当てきれないからです。</span></p>
+            <div class="progress"><i id="pbar"></i></div>
+            <div class="btnrow" style="justify-content:flex-start">
+              <button id="btnTrain" class="btn">学習スタート</button>
+              <button id="btnReset" class="btn ghost">リセット</button>
+            </div>
+            <p class="status" id="trainStatus">まだ学習していません。「学習スタート」を押してみましょう。</p>
+          </div>
+        </div>
+        <p class="legend"><i style="background:var(--accent2);opacity:.5"></i>お手本の点　<i style="background:var(--good)"></i>AIがノイズを消した結果</p>
+      </div>
+      <div class="box" style="border-color: rgba(251,191,36,0.3)">
+        <h4>ここがポイント</h4>
+        <p>学習とは「<strong>ノイズを当てる精度を、少しずつ上げていく</strong>」こと。くり返すうちに、この計算機の中の約4600個の「つまみ（パラメータ）」が、数字の形に合わせて調整されていきます。</p>
+      </div>
+    </div>
+  </section>
 
-<section class="card">
-  <h2>ほんものの世界では？</h2>
-  <p>「Stable Diffusion」や「Midjourney」などの画像生成AIも、このページでやったのと同じ <b>拡散モデル</b> という仕組みを使っています。画像生成AIの黎明期には、手書き数字のデータセット「MNIST」が実験に使われ、このページのように数字を生成する研究が盛んに行われました。</p>
-  <p>ここでは点の「形」を覚えましたが、ほんものは大量の画像から「絵の描き方」を覚えます。学習にはスーパーコンピュータ級の計算が必要ですが、<b>考え方は今日やったこととまったく同じ</b>です。音声や動画の生成にも同じアイデアが使われています。</p>
-</section>
+  <section id="step4">
+    <div class="card">
+      <div class="stepno">STEP 4 <em>／ ノイズだけから生成する</em></div>
+      <h2>生成 = 逆再生で絵を描く</h2>
+      <p class="lead">学習が終わったら、いよいよ生成です。<mark>お手本データは一切使いません</mark>。真っさらなノイズの固まりから出発して、少しずつノイズを取り除いていくと、数字が浮かび上がってきます。</p>
+      <p>「生成する」を何度も押してみましょう。毎回ランダムにノイズが足されるので、<b>毎回少しずつちがう形</b>が生まれます。これが「生成AI」が毎回ちがう絵を生み出す理由です。</p>
+      <div class="box">
+        <canvas id="cGen" class="demo" width="480" height="480"></canvas>
+        <div class="center"><button id="btnGen" class="btn">生成する</button></div>
+        <p class="status" id="genStatus">学習すると、うまく生成できるようになります。</p>
+      </div>
+      <div class="box" style="border-color: rgba(251,191,36,0.3)">
+        <h4>ここがポイント</h4>
+        <p>学習は「<strong>ノイズ → 元の形</strong>」の直し方を覚えること。生成は、その逆を「<strong>真っさらなノイズ → 形</strong>」の順で何度もくり返すこと。<strong>学習と生成は、同じ計算機を使った「逆再生」の関係</strong>です。</p>
+      </div>
+    </div>
+  </section>
 
-<section class="card">
-  <h2>クイズ</h2>
-  <details>
-    <summary>Q1. 学習中、AIはどんな「練習問題」を解いている？</summary>
-    <p>答え：<b>ノイズのかかった点を見て、「足されたノイズの向きと大きさ」を当てる問題</b>。当てるのが上手になるほど、ノイズを消すのが上手になります。</p>
-  </details>
-  <details>
-    <summary>Q2. 生成するとき、最初にあるものは何？</summary>
-    <p>答え：<b>真っさらなランダムノイズだけ</b>。お手本データは使いません。ノイズを少しずつ取り除いていくことで形が生まれます。</p>
-  </details>
-  <details>
-    <summary>Q3. 同じ設定なのに毎回生成結果がちがうのはなぜ？</summary>
-    <p>答え：<b>最初のノイズが毎回ランダムだから</b>。さらに途中でもわずかなノイズを足すので、毎回少しずつちがう結果になります。</p>
-  </details>
-</section>
+  <section id="summary">
+    <div class="card">
+      <h2>まとめ: 拡散モデルの3つのおさらい</h2>
+      <div class="mini-cards">
+        <div class="mini"><h3>1. 拡散 = ノイズを足す</h3><p>お手本データに少しずつノイズを足して、真っさらなノイズの状態まで「壊す」。</p></div>
+        <div class="mini"><h3>2. 学習 = 直し方の練習</h3><p>「ノイズのかかった点」から、足されたノイズを当てる練習をくり返す。当たるほどノイズを消すのが上手になる。</p></div>
+        <div class="mini"><h3>3. 生成 = 逆再生</h3><p>真っさらなノイズからスタートして、少しずつノイズを取り除いて形を作る。最初のノイズが毎回ちがうので、結果もちがう。</p></div>
+      </div>
+      <p class="note">このページのAIは約4600個のパラメータ（つまみ）を持つ小さな計算機です。本物の画像生成AIは、これを巨大なネットワークで実現しています。考え方は同じです。</p>
+    </div>
+  </section>
 
-<footer>このページは 1 つの HTML ファイルだけで動きます。ブラウザの中で本物の機械学習（ニューラルネットワーク）を実行しています。<br>ver 3.2</footer>
+  <section id="real">
+    <div class="card">
+      <h2>ほんものの世界では?</h2>
+      <p class="lead">「Stable Diffusion」や「Midjourney」などの画像生成AIも、このページでやったのと同じ <b>拡散モデル</b> という仕組みを使っています。</p>
+      <p>画像生成AIの黎明期には、手書き数字のデータセット「MNIST」が実験に使われ、このページのように数字を生成する研究が盛んに行われました。</p>
+      <p>ここでは点の「形」を覚えましたが、ほんものは大量の画像から「絵の描き方」を覚えます。学習にはスーパーコンピュータ級の計算が必要ですが、<strong>考え方は今日やったこととまったく同じ</strong>です。音声や動画の生成にも同じアイデアが使われています。</p>
+    </div>
+  </section>
 
-</div>
+  <section id="quiz">
+    <div class="card">
+      <h2>クイズ</h2>
+      <details>
+        <summary>Q1. 学習中、AIはどんな「練習問題」を解いている?</summary>
+        <p>答え：<b>ノイズのかかった点を見て、「足されたノイズの向きと大きさ」を当てる問題</b>。当てるのが上手になるほど、ノイズを消すのが上手になります。</p>
+      </details>
+      <details>
+        <summary>Q2. 生成するとき、最初にあるものは何?</summary>
+        <p>答え：<b>真っさらなランダムノイズだけ</b>。お手本データは使いません。ノイズを少しずつ取り除いていくことで形が生まれます。</p>
+      </details>
+      <details>
+        <summary>Q3. 同じ設定なのに毎回生成結果がちがうのはなぜ?</summary>
+        <p>答え：<b>最初のノイズが毎回ランダムだから</b>。さらに途中でもわずかなノイズを足すので、毎回少しずつちがう結果になります。</p>
+      </details>
+    </div>
+  </section>
 
-<script>
+  <section id="glossary">
+    <div class="card">
+      <h2>用語集</h2>
+      <details open>
+        <summary>拡散（かくさん）</summary>
+        <p>お手本データに少しずつノイズを足して、形を崩していくこと。コーヒーにミルクが広がるイメージ。モデル名の「Diffusion」の由来。</p>
+      </details>
+      <details>
+        <summary>ノイズ</summary>
+        <p>でたらめな値のこと。拡散では「ノイズのかかった点」を作り、AIは「足されたノイズ」を当てる練習をする。</p>
+      </details>
+      <details>
+        <summary>拡散モデル（Diffusion Model）</summary>
+        <p>「ノイズを足す → 直し方を学習 → ノイズから生成」という流れで画像を生み出すAIのしくみ。Stable Diffusionなどで使われている。</p>
+      </details>
+      <details>
+        <summary>ニューラルネットワーク</summary>
+        <p>「つまみ（パラメータ）」のついた小さな計算機の集まり。このページでは48個×2層の小さな計算機が「ノイズの当て方」を学習する。</p>
+      </details>
+      <details>
+        <summary>生成（せいせい）</summary>
+        <p>真っさらなノイズから形を作り出すこと。学習した「ノイズの消し方」を逆再生しながら使う。最初のノイズがランダムなので毎回結果がちがう。</p>
+      </details>
+      <details>
+        <summary>MNIST（エムニスト）</summary>
+        <p>手書き数字の画像データセット。画像生成AI研究の歴史で、最初の実験によく使われた「数字の教科書」。</p>
+      </details>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  拡散モデルを学ぼう — 1つのHTMLファイルだけで動いています。保存すればオフラインでも使えます。<br>
+  処理はすべてあなたのブラウザ内で行われ、データはどこにも送信されません。<br>ver 4.0
+</footer><script>
+
 "use strict";
 
 window.addEventListener("error", function(e){
@@ -666,5 +824,6 @@ drawNoise();
 drawTrain();
 drawChart();
 </script>
+
 </body>
 </html>
