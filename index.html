@@ -664,7 +664,7 @@ const previewPts = [];
 for (let i = 0; i < 300; i++) previewPts.push({ x: randn() * 1.1, y: randn() * 1.1 });
 const clean = previewPts.map(p => ({ x: p.x, y: p.y }));
 
-function drawTrain(){
+async function drawTrain(){
   drawCloud(cTrain, data, "#58a6ff", 5, 0.12, { grid: true, snap: true });
   for (let i = 0; i < previewPts.length; i++){
     clean[i].x = previewPts[i].x;
@@ -682,6 +682,7 @@ function drawTrain(){
         p.x = x0; p.y = y0;
       }
     }
+    if (t % 10 === 0) await sleep(0);
   }
   drawCloud(cTrain, clean, "#3fb950", 5, 1, { snap: true, clear: false });
 }
@@ -725,12 +726,12 @@ async function trainLoop(){
   $("btnTrain").disabled = true;
   $("btnGen").disabled = true;
   let sinceDraw = 0;
-  while (iter < TOTAL_ITERS){
+  while (training && iter < TOTAL_ITERS){
     for (let b = 0; b < 20 && iter < TOTAL_ITERS; b++){ trainBatch(); iter++; sinceDraw++; }
     $("pbar").style.width = (iter / TOTAL_ITERS * 100) + "%";
     $("lossText").textContent = (lossHist.slice(-25).reduce((a, b) => a + b, 0) / Math.min(25, lossHist.length)).toFixed(4);
     drawChart();
-    if (sinceDraw >= 250){ drawTrain(); sinceDraw = 0; }
+    if (sinceDraw >= 250){ await drawTrain(); sinceDraw = 0; }
     const pct = iter / TOTAL_ITERS;
     const st = $("trainStatus");
     if (pct < 0.3) st.innerHTML = "学習中… まだバラバラだけど、練習を続けています。";
@@ -784,6 +785,7 @@ async function generate(){
 
 // ===== リセット・データ切り替え =====
 function resetNet(){
+  training = false;
   initNet();
   iter = 0;
   lossHist.length = 0;
