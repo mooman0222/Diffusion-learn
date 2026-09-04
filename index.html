@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="ノイズを足して壊し、直し方を学び、ノイズから数字を生成する。ブラウザだけで動く拡散モデルの体験教材。">
 <title>拡散モデルを学ぼう</title>
 <style>
 :root {
@@ -40,7 +41,7 @@ nav {
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
 }
-nav .inner { max-width: 940px; margin: 0 auto; padding: 0 20px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; height: 54px; }
+nav .inner { max-width: 940px; margin: 0 auto; padding: 6px 20px; display: flex; align-items: center; gap: 8px 18px; flex-wrap: wrap; min-height: 54px; }
 nav .logo { font-weight: 700; color: var(--text); text-decoration: none; font-size: 15px; }
 nav .logo span { background: linear-gradient(90deg, var(--accent1), var(--accent2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 nav a.navlink { color: var(--muted); text-decoration: none; font-size: 13.5px; }
@@ -102,8 +103,8 @@ button.btn:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
 
 input[type="range"] { accent-color: var(--accent1); width: 100%; }
 .slider-label {
-  max-width: 480px; margin: 0 auto; display: flex; justify-content: space-between;
-  color: var(--muted); font-size: 13px;
+  max-width: 480px; margin: 0 auto; display: flex; justify-content: space-between; gap: 8px;
+  color: var(--muted); font-size: 13px; text-align: center; flex-wrap: wrap;
 }
 .slider-label span:nth-child(2) { color: var(--text); font-weight: 700; }
 
@@ -210,20 +211,20 @@ footer { text-align: center; padding: 30px 20px 60px; color: var(--muted); font-
       <div class="stepno">STEP 1 <em>／ お手本データを用意する</em></div>
       <h2>お手本 = 「覚えてほしい形」</h2>
       <p class="lead">まず、AIに覚えてもらう「お手本」の形を用意します。ここでは <b>0〜9の数字</b> を、<b>20×20のドットグリッド</b>（マス目）で表現しました。点が光っているマス＝数字の一部です。</p>
-      <p>本物の画像生成AIも、手書き数字のデータセット（MNIST）で学習した歴史があります。どの数字を覚えさせるか選んでみましょう。</p>
+      <p>手書き数字のデータセット（MNIST）は、画像生成の入門実験の定番です。どの数字を覚えさせるか選んでみましょう。</p>
       <div class="box">
-        <canvas id="cData" class="demo" width="480" height="480"></canvas>
+        <canvas id="cData" class="demo" width="480" height="480" role="img" aria-label="お手本の数字の点群表示"></canvas>
         <div class="btnrow" id="digitBtns">
           <button class="btn digit active" data-d="0">0</button>
-          <button class="btn digit" data-d="1">1</button>
-          <button class="btn digit" data-d="2">2</button>
-          <button class="btn digit" data-d="3">3</button>
-          <button class="btn digit" data-d="4">4</button>
-          <button class="btn digit" data-d="5">5</button>
-          <button class="btn digit" data-d="6">6</button>
-          <button class="btn digit" data-d="7">7</button>
-          <button class="btn digit" data-d="8">8</button>
-          <button class="btn digit" data-d="9">9</button>
+          <button class="btn digit ghost" data-d="1">1</button>
+          <button class="btn digit ghost" data-d="2">2</button>
+          <button class="btn digit ghost" data-d="3">3</button>
+          <button class="btn digit ghost" data-d="4">4</button>
+          <button class="btn digit ghost" data-d="5">5</button>
+          <button class="btn digit ghost" data-d="6">6</button>
+          <button class="btn digit ghost" data-d="7">7</button>
+          <button class="btn digit ghost" data-d="8">8</button>
+          <button class="btn digit ghost" data-d="9">9</button>
         </div>
         <p class="legend"><i style="background:var(--accent2)"></i>お手本の点（AIに覚えてもらう形）</p>
       </div>
@@ -241,14 +242,15 @@ footer { text-align: center; padding: 30px 20px 60px; color: var(--muted); font-
       <p class="lead">スライダーを動かして、お手本の点に少しずつ「ノイズ」を足してみましょう。ノイズとは、<mark>でたらめな値</mark>のこと。足すほどに形がくずれて、最後は真っさらなノイズの固まりになります。</p>
       <p>コーヒーにミルクを落とすと広がって見分けがつかなくなるのと同じで、これを <b>拡散</b> と呼びます。</p>
       <div class="box">
-        <input type="range" id="noiseSlider" min="0" max="120" value="0">
-        <div class="slider-label"><span>ノイズなし</span><span id="noiseVal">0%</span><span>ノイズ最大</span></div>
-        <canvas id="cNoise" class="demo" width="480" height="480"></canvas>
+        <input type="range" id="noiseSlider" min="0" max="120" value="0" aria-label="ノイズの段階（0から120）">
+        <div class="slider-label"><span>ノイズなし</span><span id="noiseVal">段階 0/120・ノイズ量 0%</span><span>ノイズ最大</span></div>
+        <canvas id="cNoise" class="demo" width="480" height="480" role="img" aria-label="ノイズを加えた点群表示"></canvas>
         <p class="legend"><i style="background:var(--accent2)"></i>元の形　<i style="background:var(--bad)"></i>ノイズが増えるほど色が変わる</p>
       </div>
       <div class="box" style="border-color: rgba(251,191,36,0.3)">
         <h4>ここがポイント</h4>
         <p>ノイズの量は <strong>「0（なし）」から「120（最大）」の段階</strong>で調整できます。この「段階」が、あとの学習でとても大切になります。AIは「どれだけノイズがかかっているか」を見て、直し方を決めるからです。</p>
+        <p class="note">補足：段階とノイズの大きさは正比例ではありません（3乗カーブ）。前半はゆっくり、後半は一気に崩れます。スライダー中央の数字が「段階」と「実際のノイズ量」を表しています。</p>
       </div>
     </div>
   </section>
@@ -305,10 +307,10 @@ footer { text-align: center; padding: 30px 20px 60px; color: var(--muted); font-
       <div class="box">
         <h4>学習のようす</h4>
         <div class="train-wrap">
-          <canvas id="cTrain" class="demo" width="480" height="480"></canvas>
+          <canvas id="cTrain" class="demo" width="480" height="480" role="img" aria-label="学習中のノイズ除去プレビュー"></canvas>
           <div class="train-side">
-            <canvas id="cLoss" class="demo" width="300" height="110"></canvas>
-            <p class="loss-line">誤差（小さいほど得意）: <b id="lossText">--</b><br><span style="font-size:12px">誤差は0にはならないのが正常。ノイズはランダムなので、どんなに上手でも当てきれないからです。</span></p>
+            <canvas id="cLoss" class="demo" width="300" height="110" role="img" aria-label="誤差の推移グラフ"></canvas>
+            <p class="loss-line">誤差（小さいほど得意）: <b id="lossText">--</b><br><span style="font-size:12px">誤差は0にはならないのが正常です。同じ「汚れた点」からでも元の点が一意に定まらないため、完璧に当てきれない場合が残るからです。</span></p>
             <div class="progress"><i id="pbar"></i></div>
             <div class="btnrow" style="justify-content:flex-start">
               <button id="btnTrain" class="btn">学習スタート</button>
@@ -318,10 +320,11 @@ footer { text-align: center; padding: 30px 20px 60px; color: var(--muted); font-
           </div>
         </div>
         <p class="legend"><i style="background:var(--accent2);opacity:.5"></i>お手本の点　<i style="background:var(--good)"></i>AIがノイズを消した結果</p>
+        <p class="note">学習はあなたのブラウザで計算します（対応ブラウザでは別スレッドで実行されるため、学習中もスライダー等の操作ができます）。完了まで数十秒ほどかかります。</p>
       </div>
       <div class="box" style="border-color: rgba(251,191,36,0.3)">
         <h4>ここがポイント</h4>
-        <p>学習とは「<strong>ノイズを当てる精度を、少しずつ上げていく</strong>」こと。くり返すうちに、この計算機の中の約4600個の「つまみ（パラメータ）」が、数字の形に合わせて調整されていきます。</p>
+        <p>学習とは「<strong>ノイズを当てる精度を、少しずつ上げていく</strong>」こと。くり返すうちに、この計算機の中の約2600個の「つまみ（パラメータ）」が、数字の形に合わせて調整されていきます。</p>
       </div>
     </div>
   </section>
@@ -333,7 +336,7 @@ footer { text-align: center; padding: 30px 20px 60px; color: var(--muted); font-
       <p class="lead">学習が終わったら、いよいよ生成です。<mark>お手本データは一切使いません</mark>。真っさらなノイズの固まりから出発して、少しずつノイズを取り除いていくと、数字が浮かび上がってきます。</p>
       <p>「生成する」を何度も押してみましょう。毎回ランダムにノイズが足されるので、<b>毎回少しずつちがう形</b>が生まれます。これが「生成AI」が毎回ちがう絵を生み出す理由です。</p>
       <div class="box">
-        <canvas id="cGen" class="demo" width="480" height="480"></canvas>
+        <canvas id="cGen" class="demo" width="480" height="480" role="img" aria-label="ノイズから生成した点群表示"></canvas>
         <div class="center"><button id="btnGen" class="btn">生成する</button></div>
         <p class="status" id="genStatus">学習すると、うまく生成できるようになります。</p>
       </div>
@@ -352,7 +355,7 @@ footer { text-align: center; padding: 30px 20px 60px; color: var(--muted); font-
         <div class="mini"><h3>2. 学習 = 直し方の練習</h3><p>「ノイズのかかった点」から、足されたノイズを当てる練習をくり返す。当たるほどノイズを消すのが上手になる。</p></div>
         <div class="mini"><h3>3. 生成 = 逆再生</h3><p>真っさらなノイズからスタートして、少しずつノイズを取り除いて形を作る。最初のノイズが毎回ちがうので、結果もちがう。</p></div>
       </div>
-      <p class="note">このページのAIは約4600個のパラメータ（つまみ）を持つ小さな計算機です。本物の画像生成AIは、これを巨大なネットワークで実現しています。考え方は同じです。</p>
+      <p class="note">このページのAIは約2600個のパラメータ（つまみ）を持つ小さな計算機です。本物の画像生成AIは、これを巨大なネットワーク（潜在空間・テキスト条件付けなど）で実現していますが、基本の考え方は同じです。</p>
     </div>
   </section>
 
@@ -360,8 +363,8 @@ footer { text-align: center; padding: 30px 20px 60px; color: var(--muted); font-
     <div class="card">
       <h2>ほんものの世界では?</h2>
       <p class="lead">「Stable Diffusion」や「Midjourney」などの画像生成AIも、このページでやったのと同じ <b>拡散モデル</b> という仕組みを使っています。</p>
-      <p>画像生成AIの黎明期には、手書き数字のデータセット「MNIST」が実験に使われ、このページのように数字を生成する研究が盛んに行われました。</p>
-      <p>ここでは点の「形」を覚えましたが、ほんものは大量の画像から「絵の描き方」を覚えます。学習にはスーパーコンピュータ級の計算が必要ですが、<strong>考え方は今日やったこととまったく同じ</strong>です。音声や動画の生成にも同じアイデアが使われています。</p>
+      <p>画像生成AIの入門実験では、手書き数字のデータセット「MNIST」で数字を生成する例がよく使われます。</p>
+      <p>ここでは点の「形」を覚えましたが、ほんものは大量の画像から「絵の描き方」を覚えます。代表例の「Stable Diffusion」は、画像を圧縮した潜在空間で拡散を行い、言葉（テキスト）の条件付けやU-Netという大きなネットワークを組み合わせています。学習には大規模な計算が必要ですが、<strong>「ノイズを足して、直し方を覚えて、逆再生で生成する」という骨格は今日やったことと同じ</strong>です。音声や動画の生成にも同じアイデアが使われています。</p>
     </div>
   </section>
 
@@ -378,7 +381,7 @@ footer { text-align: center; padding: 30px 20px 60px; color: var(--muted); font-
       </details>
       <details>
         <summary>Q3. 同じ設定なのに毎回生成結果がちがうのはなぜ?</summary>
-        <p>答え：<b>最初のノイズが毎回ランダムだから</b>。さらに途中でもわずかなノイズを足すので、毎回少しずつちがう結果になります。</p>
+        <p>答え：<b>最初のノイズが毎回ランダムだから</b>。さらにこのページの方法では、途中でもわずかなノイズを足しながら戻すので、毎回少しずつちがう結果になります。</p>
       </details>
     </div>
   </section>
@@ -417,16 +420,11 @@ footer { text-align: center; padding: 30px 20px 60px; color: var(--muted); font-
 
 <footer>
   拡散モデルを学ぼう — 1つのHTMLファイルだけで動いています。保存すればオフラインでも使えます。<br>
-  処理はすべてあなたのブラウザ内で行われ、データはどこにも送信されません。<br>ver 4.0
-</footer><script>
-
+  処理はすべてあなたのブラウザ内で行われ、データはどこにも送信されません。<br>ver 5.0
+</footer>
+<script id="model-script">
 "use strict";
-
-window.addEventListener("error", function(e){
-  var b = document.getElementById("errBanner");
-  if (b){ b.style.display = "block"; b.textContent = "エラーが発生しました: " + (e.message || e); }
-});
-
+// ===== モデル定義（メインスレッドとWorkerで共有。DOMには触らない） =====
 // ===== 基本設定 =====
 const T = 120;                    // ノイズの段階数
 const SIG_MAX = 0.8;              // ノイズの最大量
@@ -434,9 +432,6 @@ const sig = t => SIG_MAX * Math.pow(t / T, 3); // ノイズの量（小さいノ
 const H = 48;                     // かくれた層の大きさ
 const BATCH = 256;
 const TOTAL_ITERS = 2000;
-
-const $ = id => document.getElementById(id);
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 let spare = null;
 function randn(){
@@ -584,13 +579,13 @@ function backpropSample(p){
 
 const scratch = [0, 0];
 
-function trainBatch(){
+function trainBatch(trainData, trainIter){
   gW1.fill(0); gb1.fill(0); gW2.fill(0); gb2.fill(0); gW3.fill(0); gb3.fill(0);
   let sum = 0;
   for (let i = 0; i < BATCH; i++){
-    sum += backpropSample(data[(Math.random() * data.length) | 0]);
+    sum += backpropSample(trainData[(Math.random() * trainData.length) | 0]);
   }
-  const lr = 0.008 / (1 + iter / 800);
+  const lr = 0.008 / (1 + trainIter / 800);
   const beta1 = 0.9, beta2 = 0.999, eps = 1e-8;
   const upd = (w, m, v, g, n) => {
     const sc = 1 / BATCH;
@@ -604,8 +599,94 @@ function trainBatch(){
   upd(W1, mW1, vW1, gW1, W1.length); upd(b1, mb1, vb1, gb1, H);
   upd(W2, mW2, vW2, gW2, W2.length); upd(b2, mb2, vb2, gb2, H);
   upd(W3, mW3, vW3, gW3, W3.length); upd(b3, mb3, vb3, gb3, 2);
-  lossHist.push(sum / BATCH);
+  return sum / BATCH;
 }
+
+// Workerとメイン間の受け渡し用。推論に必要な重みのみ（Adamの内部状態はWorker側に残る）。
+function getWeights(){
+  return { W1: W1.slice(), b1: b1.slice(), W2: W2.slice(), b2: b2.slice(), W3: W3.slice(), b3: b3.slice() };
+}
+function setWeights(w){
+  W1.set(w.W1); b1.set(w.b1); W2.set(w.W2); b2.set(w.b2); W3.set(w.W3); b3.set(w.b3);
+}
+</script>
+
+<script id="worker-script" type="text/js-worker">
+"use strict";
+// 学習専用Worker。model-scriptと連結されて実行されるため、
+// initNet/trainBatch/getWeights等のモデル関数・定数を直接利用できる。
+// UIスレッドとは postMessage のみで通信し、DOMには触らない。
+let wData = null, wIter = 0, wTraining = false, wLastSnap = -999, wGen = 0;
+// start/stopが連続した場合に旧スケジュール分のチャンクが
+// 新しい学習に混ざらないよう、世代カウンタで無効化する。
+let wRun = 0;
+const WCHUNK = 5;      // 1メッセージあたりの学習回数（進捗の滑らかさ用）
+const SNAP_EVERY = 200; // 重みのスナップショット間隔（プレビュー描画用）
+
+function wChunk(run){
+  if (run !== wRun || !wTraining) return;
+  const losses = [];
+  try {
+    for (let i = 0; i < WCHUNK && wTraining && wIter < TOTAL_ITERS; i++){
+      losses.push(trainBatch(wData, wIter));
+      wIter++;
+    }
+  } catch (e) {
+    postMessage({ type: "error", gen: wGen, message: String((e && e.message) || e) });
+    wTraining = false;
+    return;
+  }
+  if (losses.length) postMessage({ type: "progress", gen: wGen, step: wIter, losses });
+  if (wIter - wLastSnap >= SNAP_EVERY || wIter >= TOTAL_ITERS){
+    wLastSnap = wIter;
+    let weights = null;
+    try { weights = getWeights(); } catch (e) { weights = null; }
+    postMessage({ type: "snapshot", gen: wGen, step: wIter, weights });
+  }
+  if (wIter >= TOTAL_ITERS){
+    wTraining = false;
+    postMessage({ type: "done", gen: wGen, step: wIter });
+    return;
+  }
+  setTimeout(function(){ wChunk(run); }, 0);
+}
+
+onmessage = function(ev){
+  const msg = (ev && ev.data) || {};
+  if (msg.type === "start"){
+    if (!msg.data || !msg.data.length){
+      postMessage({ type: "error", gen: msg.gen || 0, message: "empty training data" });
+      return;
+    }
+    initNet();
+    wData = msg.data;
+    wIter = 0;
+    wLastSnap = 0;
+    wGen = msg.gen || 0;
+    wTraining = true;
+    wRun++;
+    const run = wRun;
+    let weights = null;
+    try { weights = getWeights(); } catch (e) { weights = null; }
+    postMessage({ type: "snapshot", gen: wGen, step: 0, weights });
+    setTimeout(function(){ wChunk(run); }, 0);
+  } else if (msg.type === "stop"){
+    wTraining = false;
+    wRun++;
+  }
+};
+</script>
+
+<script>
+"use strict";
+
+window.addEventListener("error", function(e){
+  var b = document.getElementById("errBanner");
+  if (b){ b.style.display = "block"; b.textContent = "エラーが発生しました: " + (e.message || e); }
+});
+
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // ===== 描画 =====
 function ctxOf(c){ return c.getContext("2d"); }
@@ -653,16 +734,22 @@ const cData = $("cData"), cNoise = $("cNoise"), cTrain = $("cTrain"), cGen = $("
 function drawData(){ drawCloud(cData, data, "#58a6ff", 5, 1, { grid: true, snap: true }); }
 
 function drawNoise(){
-  const v = slider.value / T;
-  const pts = data.map((p, i) => ({ x: p.x + sig(slider.value) * noiseArr[i].x,
-                                    y: p.y + sig(slider.value) * noiseArr[i].y }));
-  drawCloud(cNoise, pts, noiseColor(v), 2.8, 1);
-  $("noiseVal").textContent = Math.round(v * 100) + "%";
+  const t = Number(slider.value);
+  const sNorm = sig(t) / SIG_MAX;
+  const pts = data.map((p, i) => ({ x: p.x + sig(t) * noiseArr[i].x,
+                                    y: p.y + sig(t) * noiseArr[i].y }));
+  drawCloud(cNoise, pts, noiseColor(sNorm), 2.8, 1);
+  $("noiseVal").textContent = "段階 " + t + "/" + T + "・ノイズ量 " + Math.round(sNorm * 100) + "%";
 }
 
-const previewPts = [];
-for (let i = 0; i < 300; i++) previewPts.push({ x: randn() * 1.1, y: randn() * 1.1 });
-const clean = previewPts.map(p => ({ x: p.x, y: p.y }));
+let previewPts = [];
+let clean = [];
+function resetPreview(){
+  previewPts = [];
+  for (let i = 0; i < data.length; i++) previewPts.push({ x: randn() * 1.1, y: randn() * 1.1 });
+  clean = previewPts.map(p => ({ x: p.x, y: p.y }));
+}
+resetPreview();
 
 async function drawTrain(){
   drawCloud(cTrain, data, "#58a6ff", 5, 0.12, { grid: true, snap: true });
@@ -717,36 +804,182 @@ function drawChart(){
   ctx.stroke();
 }
 
-// ===== 学習 =====
+// ===== 学習（Web Worker＋フォールバック） =====
 let iter = 0, training = false;
 const lossHist = [];
+// Web Workerで学習する場合の管理用。Workerが使えない環境では
+// メインスレッドの scheduleChunk/doChunk にフォールバックする。
+let trainWorker = null;
+let useWorker = false;
+// 世代カウンタ。リセット・データ切替・再学習後の遅延メッセージを無視するために使う。
+let trainGen = 0;
+let chunkScheduled = false;
+let fallbackSinceDraw = 0;
+let drawingTrain = false;
 
-async function trainLoop(){
+function trainStatusHTML(pct, done){
+  if (done) return "学習完了！<b>緑の点が数字の形になりました。</b>STEP 4 の「生成する」を押してみましょう。";
+  if (pct < 0.3) return "学習中… まだバラバラだけど、練習を続けています。";
+  if (pct < 0.6) return "学習中… だんだん形になってきました！";
+  return "学習中… もうすぐです！";
+}
+
+function updateTrainUI(){
+  $("pbar").style.width = (iter / TOTAL_ITERS * 100) + "%";
+  if (lossHist.length){
+    $("lossText").textContent = (lossHist.slice(-25).reduce((a, b) => a + b, 0) / Math.min(25, lossHist.length)).toFixed(4);
+  }
+  drawChart();
+  $("trainStatus").innerHTML = trainStatusHTML(iter / TOTAL_ITERS, iter >= TOTAL_ITERS);
+}
+
+async function drawTrainSafe(){
+  if (drawingTrain) return;
+  drawingTrain = true;
+  try { await drawTrain(); } finally { drawingTrain = false; }
+}
+
+function flashTrainDone(){
+  drawTrainSafe();
+  cTrain.style.boxShadow = "0 0 0 3px var(--good)";
+  setTimeout(() => { cTrain.style.boxShadow = "none"; }, 1500);
+}
+
+function handleWorkerMessage(ev){
+  const msg = (ev && ev.data) || {};
+  if (msg.gen !== trainGen) return; // 旧世代の遅延メッセージは無視する
+  if (msg.type === "progress"){
+    iter = msg.step;
+    if (msg.losses) for (const v of msg.losses) lossHist.push(v);
+    updateTrainUI();
+  } else if (msg.type === "snapshot"){
+    iter = msg.step;
+    if (msg.weights){
+      try { setWeights(msg.weights); } catch (e) { /* ignore */ }
+    }
+    updateTrainUI();
+    if (!generating) drawTrainSafe();
+  } else if (msg.type === "done"){
+    iter = msg.step;
+    training = false;
+    updateTrainUI();
+    flashTrainDone();
+    $("btnTrain").disabled = false;
+    $("btnGen").disabled = false;
+    $("pbar").style.width = "100%";
+  } else if (msg.type === "error"){
+    console.error("学習Workerでエラーが発生しました:", msg.message);
+    // Workerが使えない・壊れた場合はメインスレッド学習にフォールバックする
+    useWorker = false;
+    try { if (trainWorker) trainWorker.terminate(); } catch (e) { /* ignore */ }
+    trainWorker = null;
+    if (training && iter < TOTAL_ITERS) scheduleChunk();
+    else {
+      training = false;
+      $("btnTrain").disabled = false;
+      $("btnGen").disabled = false;
+      $("trainStatus").textContent = "学習でエラーが発生しました（コンソールを確認してください）。";
+    }
+  }
+}
+
+function setupTrainWorker(){
+  try {
+    if (typeof Worker === "undefined") return false;
+    const modelSrc = document.getElementById("model-script").textContent;
+    const workerSrc = document.getElementById("worker-script").textContent;
+    const blob = new Blob([modelSrc + "\n" + workerSrc], { type: "text/javascript" });
+    const url = URL.createObjectURL(blob);
+    const w = new Worker(url);
+    w.onmessage = handleWorkerMessage;
+    w.onerror = function(e){
+      console.error("学習Workerの起動に失敗しました。メインスレッドにフォールバックします:", e);
+      handleWorkerMessage({ data: { type: "error", gen: trainGen, message: (e && e.message) || "Worker error" } });
+    };
+    trainWorker = w;
+    useWorker = true;
+    return true;
+  } catch (e) {
+    console.error("Workerを作成できないためメインスレッドで学習します:", e);
+    trainWorker = null;
+    useWorker = false;
+    return false;
+  }
+}
+
+function scheduleChunk(){
+  if (chunkScheduled) return;
+  chunkScheduled = true;
+  requestAnimationFrame(doChunk);
+}
+
+async function doChunk(){
+  chunkScheduled = false;
+  if (!training) return;
+  const CHUNK = 4;
+  try {
+    for (let i = 0; i < CHUNK && training && iter < TOTAL_ITERS; i++){
+      lossHist.push(trainBatch(data, iter));
+      iter++;
+      fallbackSinceDraw++;
+    }
+  } catch (e) {
+    console.error("学習処理でエラーが発生しました:", e);
+    training = false;
+    $("btnTrain").disabled = false;
+    $("btnGen").disabled = false;
+    $("trainStatus").textContent = "学習でエラーが発生しました（コンソールを確認してください）。";
+    return;
+  }
+  updateTrainUI();
+  if (fallbackSinceDraw >= 250){
+    fallbackSinceDraw = 0;
+    await drawTrain();
+  }
+  if (iter >= TOTAL_ITERS){
+    training = false;
+    updateTrainUI();
+    flashTrainDone();
+    $("btnTrain").disabled = false;
+    $("btnGen").disabled = false;
+    $("pbar").style.width = "100%";
+    return;
+  }
+  scheduleChunk();
+}
+
+function resumeTrainingIfNeeded(){
+  // Worker学習中はバックグラウンドでも継続するため再スケジュール不要。
+  // メインスレッド学習時のみrAFを再開する。
+  if (useWorker) return;
+  if (training && iter < TOTAL_ITERS && !document.hidden){
+    scheduleChunk();
+  }
+}
+
+function startTraining(){
+  const wasWorker = useWorker && trainWorker;
+  // 既存の学習を止め、世代を進めて遅延メッセージを無効化する
+  training = false;
+  trainGen++;
+  if (wasWorker){
+    try { trainWorker.postMessage({ type: "stop" }); } catch (e) { /* ignore */ }
+  }
+  initNet();
+  iter = 0;
+  lossHist.length = 0;
+  fallbackSinceDraw = 0;
   training = true;
   $("btnTrain").disabled = true;
   $("btnGen").disabled = true;
-  let sinceDraw = 0;
-  while (training && iter < TOTAL_ITERS){
-    for (let b = 0; b < 20 && iter < TOTAL_ITERS; b++){ trainBatch(); iter++; sinceDraw++; }
-    $("pbar").style.width = (iter / TOTAL_ITERS * 100) + "%";
-    $("lossText").textContent = (lossHist.slice(-25).reduce((a, b) => a + b, 0) / Math.min(25, lossHist.length)).toFixed(4);
-    drawChart();
-    if (sinceDraw >= 250){ await drawTrain(); sinceDraw = 0; }
-    const pct = iter / TOTAL_ITERS;
-    const st = $("trainStatus");
-    if (pct < 0.3) st.innerHTML = "学習中… まだバラバラだけど、練習を続けています。";
-    else if (pct < 0.6) st.innerHTML = "学習中… だんだん形になってきました！";
-    else if (pct < 1) st.innerHTML = "学習中… もうすぐです！";
-    else st.innerHTML = "学習完了！<b>緑の点が数字の形になりました。</b>STEP 4 の「生成する」を押してみましょう。";
-    await sleep(0);
+  updateTrainUI();
+  $("trainStatus").textContent = "学習中… 練習を始めています。";
+  if (wasWorker){
+    // パラメータ実体はWorker側で初期化され、snapshotでメイン側に反映される
+    trainWorker.postMessage({ type: "start", gen: trainGen, data });
+  } else {
+    scheduleChunk();
   }
-  drawTrain();
-  cTrain.style.boxShadow = "0 0 0 3px var(--green)";
-  setTimeout(() => { cTrain.style.boxShadow = "none"; }, 1500);
-  training = false;
-  $("btnTrain").disabled = false;
-  $("btnGen").disabled = false;
-  $("pbar").style.width = "100%";
 }
 
 // ===== 生成 =====
@@ -756,7 +989,7 @@ async function generate(){
   generating = true;
   $("btnGen").disabled = true;
   const pts = [];
-  for (let i = 0; i < 420; i++) pts.push({ x: randn() * 1.1, y: randn() * 1.1 });
+  for (let i = 0; i < data.length; i++) pts.push({ x: randn() * 1.1, y: randn() * 1.1 });
   const st = $("genStatus");
   for (let t = T; t >= 1; t--){
     const tn = t / T;
@@ -771,8 +1004,8 @@ async function generate(){
       }
     }
     if (t % 3 === 0 || t === 1){
-      drawCloud(cGen, pts, noiseColor(tn), 5, 1, { grid: true, snap: true });
-      st.innerHTML = "ノイズを少しずつ消しています… 残りノイズ量 " + Math.round(tn * 100) + "%";
+      drawCloud(cGen, pts, noiseColor(sig(t) / SIG_MAX), 5, 1, { grid: true, snap: true });
+      st.innerHTML = "ノイズを少しずつ消しています… 残りノイズ量 " + Math.round(sig(t) / SIG_MAX * 100) + "%（段階 " + t + "/" + T + "）";
       await sleep(30);
     }
   }
@@ -780,19 +1013,26 @@ async function generate(){
     ? "学習する前はノイズを消せないので、形になりませんでした。STEP 3 で学習してからもう一度試してみましょう。"
     : "生成完了！<b>毎回少しずつちがう形</b>が生まれます。「生成する」を押して比べてみましょう。";
   generating = false;
-  $("btnGen").disabled = false;
+  if (!training) $("btnGen").disabled = false;
 }
 
 // ===== リセット・データ切り替え =====
 function resetNet(){
   training = false;
+  trainGen++;
+  if (useWorker && trainWorker){
+    try { trainWorker.postMessage({ type: "stop" }); } catch (e) { /* ignore */ }
+  }
   initNet();
   iter = 0;
   lossHist.length = 0;
+  fallbackSinceDraw = 0;
   $("pbar").style.width = "0%";
   $("lossText").textContent = "--";
   $("trainStatus").textContent = "リセットしました。もう一度「学習スタート」で練習できます。";
-  drawTrain();
+  $("btnTrain").disabled = false;
+  $("btnGen").disabled = false;
+  drawTrainSafe();
   drawChart();
 }
 
@@ -800,6 +1040,7 @@ function switchData(d){
   digit = d;
   data = genDigit(d);
   noiseArr = data.map(() => ({ x: randn(), y: randn() }));
+  resetPreview();
   document.querySelectorAll(".digit").forEach(b => {
     b.classList.toggle("active", Number(b.dataset.d) === d);
     b.classList.toggle("ghost", Number(b.dataset.d) !== d);
@@ -814,7 +1055,7 @@ function switchData(d){
 // ===== イベント登録 =====
 const slider = $("noiseSlider");
 slider.addEventListener("input", drawNoise);
-$("btnTrain").addEventListener("click", trainLoop);
+$("btnTrain").addEventListener("click", startTraining);
 $("btnReset").addEventListener("click", resetNet);
 $("btnGen").addEventListener("click", generate);
 document.querySelectorAll(".digit").forEach(b => b.addEventListener("click", () => switchData(Number(b.dataset.d))));
@@ -823,8 +1064,13 @@ document.querySelectorAll(".digit").forEach(b => b.addEventListener("click", () 
 initNet();
 drawData();
 drawNoise();
-drawTrain();
+drawTrainSafe();
 drawChart();
+// 学習用Workerを単一ファイル内のBlobから起動する(GitHub Pages・file://対応)。
+// 失敗時はメインスレッド学習にフォールバックする。
+try { setupTrainWorker(); } catch (e) { console.error("Worker初期化エラー:", e); }
+window.addEventListener("pageshow", resumeTrainingIfNeeded);
+document.addEventListener("visibilitychange", resumeTrainingIfNeeded);
 </script>
 
 </body>
